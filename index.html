@@ -113,6 +113,7 @@ body.menu canvas#gl{filter:blur(3px) brightness(0.85)}
 #portalFx{background:radial-gradient(circle at center, rgba(190,60,255,0.25), rgba(90,0,160,0.85));mix-blend-mode:screen}
 #portalFx.on{animation:warp 0.9s linear infinite}
 @keyframes warp{0%{filter:hue-rotate(0deg);transform:scale(1) rotate(0deg)}50%{transform:scale(1.06) rotate(2deg)}100%{filter:hue-rotate(40deg);transform:scale(1) rotate(0deg)}}
+#staticFx{background-size:192px 192px;image-rendering:pixelated;mix-blend-mode:screen}
 #fireFx{background:linear-gradient(to top, rgba(255,120,0,0.75) 0%, rgba(255,60,0,0.35) 25%, rgba(255,0,0,0) 45%)}
 #nightFx{background:#000}
 #hint{position:absolute;left:50%;top:62%;transform:translateX(-50%);font-size:11px;text-shadow:2px 2px 0 var(--text-shadow);text-align:center;line-height:1.8;background:rgba(0,0,0,0.45);padding:8px 12px}
@@ -170,6 +171,7 @@ body.menu canvas#gl{filter:blur(3px) brightness(0.85)}
     <div id="fireFx" class="overlay"></div>
     <div id="portalFx" class="overlay"></div>
     <div id="hurtFx" class="overlay"></div>
+    <div id="staticFx" class="overlay"></div>
     <div id="crosshair"></div>
     <div id="debug" hidden></div>
     <div id="hint" hidden></div>
@@ -237,6 +239,10 @@ body.menu canvas#gl{filter:blur(3px) brightness(0.85)}
     ЛКМ: ломать / атаковать &middot; ПКМ: ставить / использовать<br>
     1-9 и колесо: хотбар &middot; E: инвентарь &middot; Q: выбросить предмет<br>
     T: чат &middot; /: команда &middot; F3: отладка &middot; F5: вид от третьего лица &middot; Esc: пауза</p>
+    <p style="color:#ffff80">Край</p>
+    <p>Слендермены бродят ночью и в Краю. Не смотрите им в лицо! Из них выпадает жемчуг Края.<br>
+    Око Края: жемчуг Края + светокамень. Рамка портала: обсидиан + 3 каменных кирпича (2 шт.).<br>
+    Поставьте 12 рамок кольцом вокруг ямы 3×3 и вставьте в каждую око (ПКМ). Жемчуг можно бросать для телепортации.</p>
     <p style="color:#ffff80">Команды</p>
     <p>/time set day|night|noon|midnight|число &middot; /gamemode creative|survival<br>/tp x y z &middot; /give предмет [кол-во] &middot; /summon существо &middot; /difficulty &middot; /seed &middot; /kill &middot; /help</p>
     <button class="btn" id="bAboutBack" style="margin-top:12px">Назад</button>
@@ -735,6 +741,34 @@ const Tex = {
       for (let y = 0; y < 7; y++) S(d, 7, y, [80, 80, 80]);
       for (let y = 8; y < 15; y++) S(d, 15, y, [80, 80, 80]);
     });
+    // the End
+    this.newTile('end_stone', (d, rnd) => {
+      T.fillPal(d, rnd, [[221, 223, 165], [212, 214, 152], [230, 232, 178], [205, 207, 146]]);
+      for (let k = 0; k < 7; k++) { const x = Math.floor(rnd() * 15), y = Math.floor(rnd() * 15); S(d, x, y, [186, 186, 128]); S(d, x + 1, y, [196, 196, 138]); }
+    });
+    this.newTile('end_portal', (d, rnd, f) => {
+      for (let y = 0; y < 16; y++) for (let x = 0; x < 16; x++) S(d, x, y, [6 + ((x * 7 + y * 3) % 5), 10 + ((x + y * 5) % 6), 18 + ((x * 3 + y) % 8)]);
+      const cols = [[60, 200, 180], [120, 90, 230], [200, 240, 255], [40, 150, 220]];
+      for (let k = 0; k < 12; k++) {
+        const x = U.mod(Math.floor(k * 5.3 + f * (0.15 + (k % 4) * 0.08)), 16), y = U.mod(Math.floor(k * 3.7 + f * (0.05 + (k % 3) * 0.06)), 16);
+        S(d, x, y, cols[k % 4]);
+      }
+    }, true);
+    const frameTop = (d, rnd, eye) => {
+      T.fillNoise(d, rnd, [58, 108, 92], 0.18);
+      for (let i = 0; i < 16; i++) { S(d, i, 0, [200, 205, 150]); S(d, i, 15, [170, 175, 120]); S(d, 0, i, [200, 205, 150]); S(d, 15, i, [170, 175, 120]); }
+      for (let y = 4; y < 12; y++) for (let x = 4; x < 12; x++) {
+        const dx = x - 7.5, dy = y - 7.5, r = dx * dx + dy * dy;
+        if (r < 14) S(d, x, y, eye ? (r < 2 ? [10, 20, 16] : r < 6 ? [40, 170, 120] : [20, 110, 80]) : [22, 40, 34]);
+      }
+    };
+    this.newTile('end_frame_top', (d, rnd) => frameTop(d, rnd, false));
+    this.newTile('end_frame_top_eye', (d, rnd) => frameTop(d, rnd, true));
+    this.newTile('end_frame_side', (d, rnd) => {
+      T.fillPal(d, rnd, [[221, 223, 165], [212, 214, 152], [230, 232, 178]]);
+      for (let x = 0; x < 16; x++) { S(d, x, 3, [58, 108, 92]); S(d, x, 4, [48, 92, 78]); if (x % 4 === 1) S(d, x, 5, [48, 92, 78]); }
+      for (let x = 0; x < 16; x++) for (let y = 0; y < 3; y++) S(d, x, y, [0, 0, 0, 0]);
+    });
     // crack overlays
     const crackSegs = []; {
       const r = U.rng(99);
@@ -930,6 +964,10 @@ function defItem(id, key, name, p) {
   defBlock(50, 'DIAMOND_BLOCK', 'Алмазный блок', { tex: 'diamond_block', hard: 5, tool: 'pick', tier: 3 });
   defBlock(51, 'EMERALD_ORE', 'Изумрудная руда', { tex: 'emerald_ore', hard: 3, tool: 'pick', tier: 3, drop: 'EMERALD', xp: 4 });
   defBlock(52, 'STONE_BRICKS', 'Каменные кирпичи', { tex: 'stone_bricks', hard: 1.5, tool: 'pick', tier: 1 });
+  defBlock(53, 'END_STONE', 'Камень Края', { tex: 'end_stone', hard: 3, tool: 'pick', tier: 1 });
+  defBlock(54, 'END_PORTAL', 'Портал Края', Object.assign({ tex: 'end_portal', pass: 'opaque', shape: 'box', box: [0, 0, 0, 16, 12, 16], hard: -1, light: 12, emissive: true, drop: null, cullSame: true }, NS));
+  defBlock(55, 'END_FRAME', 'Рамка портала Края', { tex: { top: 'end_frame_top', bottom: 'end_stone', side: 'end_frame_side' }, opaque: false, pass: 'cutout', shape: 'box', box: [0, 0, 0, 16, 13, 16], hard: 4, tool: 'pick', tier: 1 });
+  defBlock(56, 'END_FRAME_EYE', 'Рамка портала Края с оком', { tex: { top: 'end_frame_top_eye', bottom: 'end_stone', side: 'end_frame_side' }, opaque: false, pass: 'cutout', shape: 'box', box: [0, 0, 0, 16, 13, 16], hard: 4, tool: 'pick', tier: 1, light: 3, drop: () => [[ID.END_FRAME, 1], [ID.ENDER_EYE, 1]] });
 })();
 
 (function registerItems() {
@@ -981,6 +1019,8 @@ function defItem(id, key, name, p) {
   defItem(n++, 'LAVA_BUCKET', 'Ведро лавы', { maxStack: 1, draw: 'bucket', fill: [240, 120, 20], fuel: 200 });
   defItem(n++, 'BOW', 'Лук', { maxStack: 1, draw: 'bow', tool: { type: 'bow', tier: 0, speed: 1, durability: 384, damage: 1 }, fuel: 15 });
   defItem(n++, 'GOLD_SWORD', 'Золотой меч', { maxStack: 1, draw: 'tool', kind: 'sword', col: MAT_COL.gold, tool: { type: 'sword', tier: 1, speed: 12, durability: 32, damage: 4 } });
+  defItem(n++, 'ENDER_PEARL', 'Жемчуг Края', { maxStack: 16, draw: 'pearl' });
+  defItem(n++, 'ENDER_EYE', 'Око Края', { draw: 'endereye' });
   ITEMS[ID.BED].draw = 'bedicon';
   ITEMS[ID.DOOR].draw = 'tile'; ITEMS[ID.DOOR].tile = 'door_top';
   ITEMS[ID.DOOR].maxStack = 64;
@@ -998,7 +1038,7 @@ const Registry = {
     return -1;
   },
   creativeList() {
-    const skip = new Set([ID.AIR, ID.WATER, ID.LAVA, ID.PORTAL, ID.FURNACE_LIT, ID.WHEAT_YOUNG]);
+    const skip = new Set([ID.AIR, ID.WATER, ID.LAVA, ID.PORTAL, ID.FURNACE_LIT, ID.WHEAT_YOUNG, ID.END_PORTAL, ID.END_FRAME_EYE]);
     const out = [];
     for (const it of ITEMS) if (it && !skip.has(it.id)) out.push(it.id);
     return out;
@@ -1118,6 +1158,12 @@ const Registry = {
           I.set(d, Math.round(2 + 11 * Math.cos(t)), Math.round(14 - 11 * Math.sin(t)), [150, 110, 60]);
         }
         I.outline(d, [50, 35, 20]); break;
+      case 'pearl':
+        I.ellipse(d, 8, 8, 5.5, 5.5, (x, y, r, dx, dy) => (dx < -0.2 && dy < -0.2 && r < 0.5) ? [150, 240, 220] : r > 0.7 ? [10, 60, 55] : [25, 110, 100]);
+        I.set(d, 6, 6, [230, 255, 250]); I.outline(d, [5, 30, 28]); break;
+      case 'endereye':
+        I.ellipse(d, 8, 8, 5.5, 5.5, (x, y, r, dx) => Math.abs(dx) < 0.18 && r < 0.75 ? [15, 25, 20] : r > 0.7 ? [30, 110, 70] : [70, 190, 120]);
+        I.set(d, 6, 5, [220, 255, 230]); I.outline(d, [10, 40, 25]); break;
       case 'bedicon':
         for (let y = 6; y < 10; y++) for (let x = 1; x < 15; x++) I.set(d, x, y, x < 5 ? [236, 236, 236] : [170, 32, 34]);
         for (let y = 10; y < 12; y++) for (let x = 1; x < 15; x++) I.set(d, x, y, [150, 118, 70]);
@@ -1186,7 +1232,7 @@ function collisionBox(id, meta) {
 }
 function selectBox(id, meta) {
   const b = BLOCKS[id];
-  if (!id || b.fluid || b.shape === 'portal') return null;
+  if (!id || b.fluid || b.shape === 'portal' || id === ID.END_PORTAL) return null;
   if (b.shape === 'cross') return [0.15, 0, 0.15, 0.85, 0.8, 0.85];
   if (id === ID.TORCH) return [0.38, 0, 0.38, 0.62, 0.65, 0.62];
   const bx = shapeBox(id, meta);
@@ -1324,7 +1370,7 @@ const Mesher = {
       this.hmSolid[base] = hs; this.hmAny[base] = Math.max(ha, hs);
     }
     this.computeBlockLight(chunk, nb);
-    const nether = world.dim === 'nether';
+    const nether = world.dim !== 'overworld'; // constant ambient light outside the overworld
     const B = this.builders;
     B[1].vc = B[1].ic = 0; B[2].vc = B[2].ic = 0; B[3].vc = B[3].ic = 0;
     const maxY = Math.min(127, Math.max(nb[4].maxY, 0) + 1);
@@ -1569,8 +1615,8 @@ const Mesher = {
 };
 
 /* ========================== Generators ============================= */
-const BIOME = { OCEAN: 0, BEACH: 1, PLAINS: 2, FOREST: 3, DESERT: 4, SNOW: 5, MOUNTAINS: 6, HILLS: 7, NETHER: 8 };
-const BIOME_NAMES = ['Океан', 'Пляж', 'Равнины', 'Лес', 'Пустыня', 'Снежная тундра', 'Горы', 'Холмы', 'Ад'];
+const BIOME = { OCEAN: 0, BEACH: 1, PLAINS: 2, FOREST: 3, DESERT: 4, SNOW: 5, MOUNTAINS: 6, HILLS: 7, NETHER: 8, END: 9 };
+const BIOME_NAMES = ['Океан', 'Пляж', 'Равнины', 'Лес', 'Пустыня', 'Снежная тундра', 'Горы', 'Холмы', 'Ад', 'Край'];
 
 class OverworldGen {
   constructor(seed) {
@@ -2056,11 +2102,76 @@ class NetherGen {
   placeVillage() { }
 }
 
+class EndGen {
+  constructor(seed) {
+    this.seed = seed | 0;
+    this.n1 = new Simplex(this.seed ^ 0xe1); this.n2 = new Simplex(this.seed ^ 0xe2);
+    const r = U.rng(U.hash(this.seed, 3, 5, 7));
+    this.pillars = [];
+    for (let i = 0; i < 8; i++) {
+      const a = i * Math.PI / 4 + r() * 0.3, rad = 38 + r() * 6;
+      this.pillars.push({ x: Math.round(Math.cos(a) * rad), z: Math.round(Math.sin(a) * rad), r: 2 + (i % 3), h: 74 + Math.floor(r() * 24) });
+    }
+  }
+  biomeAt() { return BIOME.END; }
+  colInfo() { return { h: 60, biome: BIOME.END, t: 0 }; }
+  inVillage() { return false; }
+  // [top, bottom] of island ground in a column, or null over the void
+  column(x, z) {
+    const d = Math.sqrt(x * x + z * z);
+    const nz = this.n1.fbm2(x * 0.02, z * 0.02, 3);
+    if (d < 100) {
+      const edge = 86 + nz * 12;
+      if (d >= edge) return null;
+      const k = 1 - d / edge;
+      const top = Math.floor(57 + nz * 3 + Math.min(1, k * 3) * 4);
+      return [top, Math.floor(top - 3 - Math.pow(k, 0.6) * 38)];
+    }
+    if (d > 150) {
+      const v = this.n2.fbm2(x * 0.012, z * 0.012, 3);
+      if (v > 0.25) { const k = Math.min(1, (v - 0.25) / 0.25); const top = Math.floor(50 + nz * 6 + k * 6); return [top, Math.floor(top - 2 - k * 18)]; }
+    }
+    return null;
+  }
+  generate(chunk) {
+    const bx = chunk.cx * 16, bz = chunk.cz * 16, B = chunk.blocks;
+    for (let z = 0; z < 16; z++) for (let x = 0; x < 16; x++) {
+      const c = this.column(bx + x, bz + z);
+      if (!c) continue;
+      for (let y = Math.max(1, c[1]); y <= c[0]; y++) B[x | (z << 4) | (y << 8)] = ID.END_STONE;
+    }
+    for (const p of this.pillars) {
+      if (p.x + p.r < bx || p.x - p.r > bx + 15 || p.z + p.r < bz || p.z - p.r > bz + 15) continue;
+      for (let z = 0; z < 16; z++) for (let x = 0; x < 16; x++) {
+        const dx = bx + x - p.x, dz = bz + z - p.z;
+        if (dx * dx + dz * dz > p.r * p.r + p.r) continue;
+        for (let y = 40; y <= p.h; y++) B[x | (z << 4) | (y << 8)] = ID.OBSIDIAN;
+        if (dx === 0 && dz === 0) { B[x | (z << 4) | ((p.h + 1) << 8)] = ID.BEDROCK; B[x | (z << 4) | ((p.h + 2) << 8)] = ID.GLOWSTONE; }
+      }
+    }
+    // exit portal back to the overworld at the centre of the main island
+    if (bx <= 3 && bx + 15 >= -3 && bz <= 3 && bz + 15 >= -3) {
+      const base = this.column(0, 0)[0];
+      for (let dz = -3; dz <= 3; dz++) for (let dx = -3; dx <= 3; dx++) {
+        const lx = dx - bx, lz = dz - bz;
+        if (lx < 0 || lx > 15 || lz < 0 || lz > 15) continue;
+        const m = Math.max(Math.abs(dx), Math.abs(dz));
+        for (let y = base + 1; y <= base + 6; y++) B[lx | (lz << 4) | (y << 8)] = 0;
+        B[lx | (lz << 4) | ((base - 1) << 8)] = ID.BEDROCK;
+        if (m <= 1) B[lx | (lz << 4) | (base << 8)] = (dx === 0 && dz === 0) ? ID.BEDROCK : ID.END_PORTAL;
+        else if (m === 2) B[lx | (lz << 4) | (base << 8)] = ID.BEDROCK;
+        if (dx === 0 && dz === 0) { for (let y = base + 1; y <= base + 3; y++) B[lx | (lz << 4) | (y << 8)] = ID.BEDROCK; B[lx | (lz << 4) | ((base + 4) << 8)] = ID.TORCH; }
+      }
+    }
+  }
+  placeVillage() { }
+}
+
 /* ============================= World =============================== */
 class World {
   constructor(dim, seed) {
     this.dim = dim; this.seed = seed;
-    this.gen = dim === 'nether' ? new NetherGen(seed) : new OverworldGen(seed);
+    this.gen = dim === 'nether' ? new NetherGen(seed) : dim === 'end' ? new EndGen(seed) : new OverworldGen(seed);
     this.chunks = new Map();
     this.mods = new Map();          // chunkKey -> Map(idx -> id | meta<<8)
     this.tiles = new Map();         // posKey -> tile entity
@@ -2077,7 +2188,7 @@ class World {
   getChunk(cx, cz) { return this.chunks.get(cx + ',' + cz); }
   isLoaded(x, z) { return this.chunks.has(Math.floor(x / 16) + ',' + Math.floor(z / 16)); }
   getBlock(x, y, z) {
-    if (y < 0) return ID.BEDROCK;
+    if (y < 0) return this.dim === 'end' ? 0 : ID.BEDROCK;
     if (y > 127) return 0;
     const c = this.chunks.get((x >> 4) + ',' + (z >> 4));
     if (!c) return 0;
@@ -2331,7 +2442,7 @@ const Physics = {
     for (let x = ix0; x <= ix1; x++) for (let z = iz0; z <= iz1; z++) {
       if (!world.isLoaded(x, z)) { out.push([x, iy0, z, x + 1, iy1 + 1, z + 1]); continue; }
       for (let y = iy0; y <= iy1; y++) {
-        if (y < 0) { out.push([x, y, z, x + 1, y + 1, z + 1]); continue; }
+        if (y < 0) { if (world.dim !== 'end') out.push([x, y, z, x + 1, y + 1, z + 1]); continue; }
         const id = world.getBlock(x, y, z);
         if (!SOLID[id]) continue;
         if (opts && opts.doors && id === ID.DOOR) continue;
@@ -2599,6 +2710,8 @@ const FACES = {
   spider: [['kkkkkkkk', 'kkkkkkkk', 'krkkkkrk', 'kkrkkrkk', 'krrkkrrk', 'kkkkkkkk', 'kkkkkkkk', 'kkkkkkkk'], { k: [40, 34, 32], r: [220, 20, 20] }],
   ghast: [['wwwwwwww', 'wwwwwwww', 'wkkwwkkw', 'wwwwwwww', 'wwwwwwww', 'wwkkkkww', 'wwwwwwww', 'wwwwwwww'], { w: [240, 240, 240], k: [120, 120, 120] }],
   ghastOpen: [['wwwwwwww', 'wwwwwwww', 'wrrwwrrw', 'wkkwwkkw', 'wwwwwwww', 'wwkkkkww', 'wwkkkkww', 'wwwwwwww'], { w: [240, 240, 240], k: [60, 60, 60], r: [200, 30, 30] }],
+  slender: [['wwwwwwww', 'wwwwwwww', 'wwwwwwww', 'wsswwssw', 'wwwwwwww', 'wwwwwwww', 'wwwsswww', 'wwwwwwww'], { w: [236, 234, 230], s: [214, 212, 208] }],
+  slenderAngry: [['wwwwwwww', 'wwwwwwww', 'wwwwwwww', 'wkkwwkkw', 'wwwwwwww', 'wwwwwwww', 'wwkkkkww', 'wwwkkwww'], { w: [236, 234, 230], k: [20, 0, 0] }],
   pigman: [['pppggppp', 'pgpppppg', 'pppppppp', 'pwkppkgp', 'pppppppp', 'ppgpppgp', 'pppkkppp', 'pgpppppp'], { p: [230, 150, 150], g: [100, 150, 80], w: [255, 255, 255], k: [30, 20, 20] }],
   golem: [['gggggggg', 'gggggggg', 'gkkggkkg', 'grkggkrg', 'gggggggg', 'gggggggg', 'gggggggg', 'gggggggg'], { g: [200, 196, 186], k: [60, 50, 40], r: [160, 40, 30] }],
   player: [['hhhhhhhh', 'hhhhhhhh', 'hssssssh', 'swbsswbs', 'ssssssss', 'sssmmsss', 'ssmssmss', 'ssssssss'], { h: [80, 50, 25], s: [200, 150, 110], w: [255, 255, 255], b: [40, 70, 160], m: [150, 90, 70] }],
@@ -2716,6 +2829,17 @@ const MOB_TYPES = {
     build: (mats) => Models.humanoid({ skin: { c: [230, 150, 150] }, shirt: { c: [120, 90, 60] }, pants: { c: [100, 140, 80] }, face: FT('pigman'),
       extra: (m, mats2, M) => { const g = M.mat({ c: [250, 215, 60] }, mats2); M.box(m.arms[1], 1, 12, 2, 0, -12, 4, g); } }, mats),
   },
+  slender: {
+    name: 'Слендермен', hp: 40, hw: 0.3, h: 2.9, speed: 3.2, hostile: true, stare: true, dmg: 7, xp: [5, 5], sound: 'static',
+    drops: (r) => [[ID.ENDER_PEARL, r() < 0.6 ? 1 : 0]],
+    build: (mats) => Models.humanoid({ skin: { c: [236, 234, 230] }, shirt: { c: [22, 22, 26] }, pants: { c: [18, 18, 22] }, arm: { c: [22, 22, 26] }, face: FT('slender'),
+      size: { head: [8, 8, 8], body: [8, 12, 4], arm: [2, 30, 2], leg: [2, 30, 2] },
+      extra: (m, mats2, M) => {
+        const shirt = M.mat({ c: [235, 235, 235] }, mats2), tie = M.mat({ c: [150, 10, 20] }, mats2), hand = M.mat({ c: [236, 234, 230] }, mats2);
+        M.box(m.root, 2, 12, 0.6, 0, 36, 2.2, shirt); M.box(m.root, 1, 8, 0.8, 0, 37, 2.4, tie);
+        m.arms.forEach(a => { M.box(a, 2.4, 3, 2.4, 0, -28.5, 0, hand); });
+      } }, mats),
+  },
   playerModel: {
     name: 'Игрок', hp: 20, hw: 0.3, h: 1.8, speed: 0, npc: true,
     build: (mats) => Models.humanoid({ skin: { c: [200, 150, 110] }, shirt: { c: [60, 130, 190] }, pants: { c: [60, 60, 110] }, face: FT('player'),
@@ -2771,6 +2895,7 @@ class Mob {
       if (this.t.neutral) Mobs.angerPigmen(this.pos, 16);
       if (this.type === 'golem') this.ai.angryPlayer = 25;
       if (this.type === 'villager') this.ai.panic = 5;
+      if (this.t.stare) this.ai.angry = 30;
     }
     if (this.hp <= 0) this.die(src);
     return true;
@@ -3007,6 +3132,7 @@ class Mob {
     // hostile
     if (Game.difficulty === 0) { this.hp = 0; this.dead = true; this.deathT = 1; return; }
     if (t.flying) { this.thinkGhast(dt, pAlive, pd); return; }
+    if (t.stare) { this.thinkSlender(dt, pAlive, pd); return; }
     let chase = pAlive && pd < (t.ranged ? 18 : 20);
     if (this.type === 'spider' && chase && ai.angry <= 0) {
       // spiders are neutral in bright light
@@ -3054,6 +3180,51 @@ class Mob {
       this.attackCd = 1;
       P.damage(t.dmg * Game.diffMul(), t.name, P.pos.x - this.pos.x, P.pos.z - this.pos.z);
     }
+  }
+  teleport(cx, cy, cz, r) {
+    const w = this.world;
+    for (let k = 0; k < 24; k++) {
+      const x = Math.floor(cx + (Math.random() - 0.5) * 2 * r), z = Math.floor(cz + (Math.random() - 0.5) * 2 * r);
+      if (!w.isLoaded(x, z)) continue;
+      for (let y = Math.floor(cy) + 8; y > Math.floor(cy) - 8; y--) {
+        if (y < 1) break;
+        const below = w.getBlock(x, y - 1, z);
+        if (!SOLID[below] || FLUID[below]) continue;
+        if (SOLID[w.getBlock(x, y, z)] || SOLID[w.getBlock(x, y + 1, z)] || SOLID[w.getBlock(x, y + 2, z)] || FLUID[w.getBlock(x, y, z)]) continue;
+        Particles.puff(this.pos.x, this.pos.y + 1.4, this.pos.z, 24, 0.6, 0.2, 0.9, 1.2);
+        Sound.play('warp', { x: this.pos.x, y: this.pos.y, z: this.pos.z });
+        this.pos.set(x + 0.5, y, z + 0.5); this.vel.set(0, 0, 0); this.ai.path = null;
+        Particles.puff(this.pos.x, this.pos.y + 1.4, this.pos.z, 24, 0.6, 0.2, 0.9, 1.2);
+        return true;
+      }
+    }
+    return false;
+  }
+  thinkSlender(dt, pAlive, pd) {
+    const ai = this.ai, t = this.t, P = Player;
+    ai.tpT = (ai.tpT === undefined ? 10 + Math.random() * 20 : ai.tpT) - dt;
+    if (this.inWater || this.inLava) { if (this.invul <= 0) { this.hp -= 1; this.hurtT = 0.2; this.invul = 0.5; if (this.hp <= 0) this.die('fire'); } this.teleport(this.pos.x, this.pos.y, this.pos.z, 16); return; }
+    // looking straight at its face makes it hostile
+    if (pAlive && pd < 48 && ai.angry <= 0) {
+      const e = P.eye(), d = P.lookDir();
+      const hx = this.pos.x - e.x, hy = this.pos.y + this.h - 0.3 - e.y, hz = this.pos.z - e.z, len = Math.sqrt(hx * hx + hy * hy + hz * hz) || 1;
+      const dot = (hx * d.x + hy * d.y + hz * d.z) / len;
+      if (dot > Math.cos(Math.atan(0.6 / len)) && this.canSee(P.pos, e.y)) { ai.angry = 30; ai.tpT = 1.5; Sound.play('stare'); }
+    }
+    this.model.head.children[0].material[4].map = ai.angry > 0 ? FT('slenderAngry') : FT('slender');
+    if (ai.angry > 0 && pAlive) {
+      ai.angry -= dt;
+      ai.face = Math.atan2(P.pos.x - this.pos.x, P.pos.z - this.pos.z);
+      if (pd > 10 && ai.tpT <= 0) { ai.tpT = 2 + Math.random() * 2; this.teleport(P.pos.x, P.pos.y, P.pos.z, 5); }
+      this.followPath(P.pos.x, P.pos.y, P.pos.z, t.speed * 1.4, dt, 200);
+      if (pd < 1.4 + this.hw && Math.abs(P.pos.y - this.pos.y) < 2.5 && this.attackCd <= 0) {
+        this.attackCd = 1;
+        P.damage(t.dmg * Game.diffMul(), t.name, P.pos.x - this.pos.x, P.pos.z - this.pos.z);
+      }
+      return;
+    }
+    if (ai.tpT <= 0) { ai.tpT = 15 + Math.random() * 25; this.teleport(this.pos.x, this.pos.y, this.pos.z, 20); return; }
+    this.wander(dt, 0.4);
   }
   thinkGhast(dt, pAlive, pd) {
     const ai = this.ai, w = this.world, P = Player;
@@ -3143,7 +3314,7 @@ class ItemEntity {
   }
   update(dt) {
     this.age += dt; this.delay -= dt;
-    if (this.age > 300) return false;
+    if (this.age > 300 || this.pos.y < -40) return false;
     const w = this.world;
     if (!w.isLoaded(this.pos.x, this.pos.z)) return true;
     const fl = Physics.fluidAt(w, this.pos.x, this.pos.y + 0.1, this.pos.z);
@@ -3231,6 +3402,8 @@ class Projectile {
       const fl = new THREE.Mesh(new THREE.BoxGeometry(0.14, 0.02, 0.14), new THREE.MeshLambertMaterial({ color: 0xeeeeee }));
       fl.position.z = -0.26;
       this.mesh.add(shaft, tip, fl);
+    } else if (kind === 'pearl') {
+      this.mesh = new THREE.Mesh(new THREE.BoxGeometry(0.22, 0.22, 0.22), new THREE.MeshBasicMaterial({ color: 0x1f8f80 }));
     } else {
       this.mesh = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.5, 0.5), new THREE.MeshBasicMaterial({ color: 0xff7a1a }));
       const core = new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.3, 0.3), new THREE.MeshBasicMaterial({ color: 0xffe060 }));
@@ -3243,14 +3416,18 @@ class Projectile {
     if (this.age > (this.stuck ? 30 : 12)) return false;
     if (this.stuck) return true;
     const w = this.world;
-    if (this.kind === 'arrow') this.vel.y -= 20 * dt;
-    const steps = Math.ceil(this.vel.length() * dt / 0.25);
+    if (this.kind === 'arrow' || this.kind === 'pearl') this.vel.y -= 20 * dt;
+    if (this.pos.y < -30) return false;
+    const steps = Math.max(1, Math.ceil(this.vel.length() * dt / 0.25));
     const sdt = dt / steps;
+    const prev = this.pos.clone();
     for (let s = 0; s < steps; s++) {
+      prev.copy(this.pos);
       this.pos.addScaledVector(this.vel, sdt);
       const bx = Math.floor(this.pos.x), by = Math.floor(this.pos.y), bz = Math.floor(this.pos.z);
       const id = w.getBlock(bx, by, bz);
       if (SOLID[id]) {
+        if (this.kind === 'pearl') { this.landPearl(prev); return false; }
         if (this.kind === 'fireball') { Mobs.explode(w, this.pos.x, this.pos.y, this.pos.z, 1.2, this.owner); return false; }
         this.stuck = true; Sound.play('arrowhit', { x: this.pos.x, y: this.pos.y, z: this.pos.z });
         this.pos.addScaledVector(this.vel, -sdt * 0.5);
@@ -3271,6 +3448,8 @@ class Projectile {
         if (m.dead || m === this.owner || m.world !== w) continue;
         const p = m.pos;
         if (this.pos.x > p.x - m.hw && this.pos.x < p.x + m.hw && this.pos.z > p.z - m.hw && this.pos.z < p.z + m.hw && this.pos.y > p.y && this.pos.y < p.y + m.h) {
+          if (this.kind === 'pearl') { this.landPearl(prev); return false; }
+          if (m.t.stare && this.kind === 'arrow') { m.teleport(m.pos.x, m.pos.y, m.pos.z, 12); continue; }
           if (this.kind === 'fireball') { Mobs.explode(w, this.pos.x, this.pos.y, this.pos.z, 1.2, this.owner); return false; }
           m.damage(Math.ceil(this.vel.length() / 24 * 6), this.owner === 'player' ? 'arrow' : 'mob', this.vel.x, this.vel.z);
           return false;
@@ -3282,6 +3461,16 @@ class Projectile {
     if (this.kind === 'arrow') { this.mesh.rotation.order = 'YXZ'; this.mesh.rotation.y = Math.atan2(this.vel.x, this.vel.z); this.mesh.rotation.x = -Math.atan2(this.vel.y, Math.hypot(this.vel.x, this.vel.z)); }
     else this.mesh.rotation.x += dt * 5;
     return true;
+  }
+  landPearl(at) {
+    const w = this.world, P = Player;
+    Particles.puff(at.x, at.y, at.z, 20, 0.6, 0.2, 0.9, 0.8);
+    if (Game.world !== w || P.dead) return;
+    P.pos.set(at.x, Math.floor(at.y + 0.01), at.z);
+    for (let i = 0; i < 4 && Physics.boxes(w, P.pos.x - P.hw, P.pos.y, P.pos.z - P.hw, P.pos.x + P.hw, P.pos.y + P.h, P.pos.z + P.hw).some(b => b[4] > P.pos.y && b[1] < P.pos.y + P.h && b[0] < P.pos.x + P.hw && b[3] > P.pos.x - P.hw && b[2] < P.pos.z + P.hw && b[5] > P.pos.z - P.hw); i++) P.pos.y += 1;
+    P.vel.set(0, 0, 0); P.fallDist = 0;
+    Sound.play('warp');
+    P.damage(2, 'fall', 0, 0, true);
   }
   dispose() { Mobs.group.remove(this.mesh); this.mesh.traverse(o => { if (o.geometry) o.geometry.dispose(); if (o.material) o.material.dispose(); }); }
 }
@@ -3383,13 +3572,17 @@ const Mobs = {
     if (!w || P.dead) return;
     const hostiles = this.list.filter(m => m.t.hostile && !m.dead).length;
     if (Game.difficulty === 0) return;
-    const cap = w.dim === 'nether' ? 10 : [0, 10, 16, 22][Game.difficulty];
+    const cap = w.dim === 'overworld' ? [0, 10, 16, 22][Game.difficulty] : w.dim === 'end' ? 14 : 10;
     if (hostiles >= cap) return;
     for (let a = 0; a < 4; a++) {
       const ang = Math.random() * Math.PI * 2, dist = 22 + Math.random() * 28;
       const x = Math.floor(P.pos.x + Math.cos(ang) * dist), z = Math.floor(P.pos.z + Math.sin(ang) * dist);
       if (!w.isLoaded(x, z)) continue;
       const top = w.heightAt(x, z);
+      if (w.dim === 'end') {
+        if (top > 0 && this.spawnable(w, x, top + 1, z) && !SOLID[w.getBlock(x, top + 3, z)]) { this.spawn('slender', w, x + 0.5, top + 1, z + 0.5); return; }
+        continue;
+      }
       if (w.dim === 'nether') {
         const y0 = 20 + Math.floor(Math.random() * 80);
         if (Math.random() < 0.25) {
@@ -3410,7 +3603,8 @@ const Mobs = {
       if (y < 0) continue;
       if (Game.lightAt(x + 0.5, y + 0.5, z + 0.5) > 7) continue;
       const r = Math.random();
-      const type = r < 0.35 ? 'zombie' : r < 0.6 ? 'skeleton' : r < 0.8 ? 'spider' : 'hisser';
+      const type = r < 0.32 ? 'zombie' : r < 0.55 ? 'skeleton' : r < 0.72 ? 'spider' : r < 0.9 ? 'hisser' : 'slender';
+      if (type === 'slender' && SOLID[w.getBlock(x, y + 2, z)]) continue;
       if (type === 'spider' && (!this.spawnable(w, x + 1, y, z) || !this.spawnable(w, x, y, z + 1))) continue;
       this.spawn(type, w, x + 0.5, y, z + 0.5);
       return;
@@ -3806,6 +4000,10 @@ const Player = {
     return false;
   },
   checkPortal(dt) {
+    if (Physics.overlaps(Game.world, this, ID.END_PORTAL)) {
+      if (!this.portalCd) { this.portalCd = true; this.portalT = 0; Dimension.travelEnd(); }
+      return;
+    }
     if (Physics.overlaps(Game.world, this, ID.PORTAL)) {
       if (!this.portalCd) {
         this.portalT += dt;
@@ -3932,6 +4130,24 @@ const Player = {
       }
     }
     if (!held) return;
+    if (hid === ID.ENDER_PEARL) {
+      if (!first) return;
+      const e = this.eye(), d = this.lookDir();
+      Mobs.shoot('pearl', w, e.x + d.x * 0.4, e.y + d.y * 0.4 - 0.1, e.z + d.z * 0.4, d.x * 22, d.y * 22 + 2, d.z * 22, 'player');
+      if (!this.isCreative()) Inventory.consumeHeld(1);
+      Sound.play('bow'); this.swing = 1; this.useCd = 0.5;
+      return;
+    }
+    if (hid === ID.ENDER_EYE) {
+      if (first && t && w.getBlock(t.x, t.y, t.z) === ID.END_FRAME) {
+        w.setBlock(t.x, t.y, t.z, ID.END_FRAME_EYE, 0);
+        if (!this.isCreative()) Inventory.consumeHeld(1);
+        Sound.play('place', { block: ID.END_STONE }); this.swing = 1;
+        Particles.puff(t.x + 0.5, t.y + 1, t.z + 0.5, 10, 0.3, 0.9, 0.6, 0.6);
+        Dimension.tryEndPortal(w, t.x, t.y, t.z);
+      }
+      return;
+    }
     // food
     if (it.food) {
       if (this.hunger < 20 && this.eating <= 0) { this.eating = 0.0001; this.eatSnd = 0; }
@@ -4144,6 +4360,8 @@ const Crafting = {
     R(['III', 'III', 'III'], { I: 'DIAMOND' }, 'DIAMOND_BLOCK');
     S(['IRON_BLOCK'], 'IRON_INGOT', 9); S(['GOLD_BLOCK'], 'GOLD_INGOT', 9); S(['DIAMOND_BLOCK'], 'DIAMOND', 9);
     R(['GG', 'GG'], { G: 'GLOWSTONE' }, 'GLOWSTONE');
+    S(['ENDER_PEARL', 'GLOWSTONE'], 'ENDER_EYE');
+    R([' O ', 'SSS'], { O: 'OBSIDIAN', S: 'STONE_BRICKS' }, 'END_FRAME', 2);
     const sm = (a, b) => { this.smelt[ID[a]] = ID[b]; };
     sm('IRON_ORE', 'IRON_INGOT'); sm('GOLD_ORE', 'GOLD_INGOT'); sm('SAND', 'GLASS'); sm('COBBLE', 'STONE');
     sm('RAW_BEEF', 'STEAK'); sm('RAW_PORK', 'COOKED_PORK'); sm('RAW_CHICKEN', 'COOKED_CHICKEN'); sm('RAW_MUTTON', 'COOKED_MUTTON');
@@ -4250,6 +4468,9 @@ const UI = {
     this.heartEls = mkRow('hearts', 10); this.foodEls = mkRow('food', 10); this.armorEls = mkRow('armorRow', 10); this.bubbleEls = mkRow('bubbles', 10);
     document.querySelectorAll('.screen.dirt').forEach(e => { e.style.backgroundImage = 'url(' + HudIcons.dirt + ')'; });
     this.drawLogo();
+    { const [c, x] = U.canvas2d(64, 64); const img = x.createImageData(64, 64);
+      for (let i = 0; i < 4096; i++) { const v = Math.random() * 255; img.data[i * 4] = img.data[i * 4 + 1] = img.data[i * 4 + 2] = v; img.data[i * 4 + 3] = 255; }
+      x.putImageData(img, 0, 0); $('staticFx').style.backgroundImage = 'url(' + c.toDataURL() + ')'; }
     this.bindMenus();
     this.bindWindowMouse();
   },
@@ -4265,7 +4486,7 @@ const UI = {
     if (f && id !== 'scrLoading') setTimeout(() => { try { f.focus({ preventScroll: true }); } catch (e) { /* ignore */ } }, 0);
   },
   hideScreens() { for (const s of this.screens) $(s).hidden = true; },
-  splashes: ['Теперь с кубами!', '100% процедурно!', 'Ни одной картинки!', 'Копай глубже!', 'Не буди Шипуна!', 'Всё в одном файле!', 'Пиксели повсюду!', 'Прямо в браузере!', 'Загляни в Ад!', 'Ищи алмазы!', 'Кубы любят тебя!', 'Ночью не гуляй!', 'Теперь и с жителями!', 'Шестнадцать на шестнадцать!', 'Сделай кирку!', 'Тише едешь, дальше копаешь!', 'Бесконечный мир!'],
+  splashes: ['Теперь с кубами!', '100% процедурно!', 'Ни одной картинки!', 'Копай глубже!', 'Не буди Шипуна!', 'Всё в одном файле!', 'Пиксели повсюду!', 'Прямо в браузере!', 'Загляни в Ад!', 'Ищи алмазы!', 'Кубы любят тебя!', 'Ночью не гуляй!', 'Теперь и с жителями!', 'Шестнадцать на шестнадцать!', 'Сделай кирку!', 'Тише едешь, дальше копаешь!', 'Бесконечный мир!', 'Не смотри ему в лицо!', 'Добро пожаловать в Край!'],
   newSplash() { $('splash').textContent = this.splashes[Math.floor(Math.random() * this.splashes.length)]; },
   drawLogo() {
     const G = {
@@ -4442,6 +4663,12 @@ const UI = {
     const pf = $('portalFx'), pt = P.portalT / (creative ? 1 : 3);
     pf.style.opacity = Math.min(1, pt * 1.1);
     pf.classList.toggle('on', pt > 0);
+    // static when an angry slenderman is close
+    let st = 0;
+    if (!P.dead) for (const m of Mobs.list) if (m.t.stare && !m.dead && m.ai.angry > 0 && m.world === Game.world) st = Math.max(st, 1 - m.pos.distanceTo(P.pos) / 20);
+    const sf = $('staticFx');
+    sf.style.opacity = st > 0 ? (st * 0.45).toFixed(2) : 0;
+    if (st > 0) sf.style.backgroundPosition = Math.floor(Math.random() * 192) + 'px ' + Math.floor(Math.random() * 192) + 'px';
     // item name
     if (this.itemNameT > 0) { this.itemNameT -= dt; $('itemName').style.opacity = Math.min(1, this.itemNameT); }
     if (this.toastT > 0) { this.toastT -= dt; if (this.toastT <= 0) $('toast').hidden = true; }
@@ -4463,7 +4690,7 @@ const UI = {
         'Блок: ' + bx + ' ' + by + ' ' + bz + '  Чанк: ' + Math.floor(bx / 16) + ' ' + Math.floor(bz / 16) + ' [' + (U.mod(bx, 16)) + ' ' + (U.mod(bz, 16)) + ']',
         'Направление: ' + facing,
         'Биом: ' + BIOME_NAMES[w.gen.biomeAt(bx, bz)],
-        'Измерение: ' + (w.dim === 'nether' ? 'Ад' : 'Обычный мир'),
+        'Измерение: ' + ({ nether: 'Ад', end: 'Край' }[w.dim] || 'Обычный мир'),
         'Свет: ' + Game.lightAt(p.x, p.y + 0.5, p.z).toFixed(0) + '  Время: ' + Math.floor(Game.time) + ' (день ' + (Math.floor(Game.totalTicks / 24000) + 1) + ')',
         'Чанков: ' + w.chunks.size + '  Существ: ' + Mobs.list.length + '  Предметов: ' + Mobs.items.length,
         'Режим: ' + (P.isCreative() ? 'творческий' : 'выживание') + '  Сложность: ' + ['мирная', 'лёгкая', 'нормальная', 'сложная'][Game.difficulty],
@@ -4932,6 +5159,9 @@ const Sound = {
       case 'mob_hmm': this.tone(out, t, 0.35, 'sine', 210, 160, 0.12, [6, 10]); break;
       case 'mob_wail': this.tone(out, t, 1.2, 'sine', 700, 1000, 0.1, [5, 40]); break;
       case 'mob_grunt': this.tone(out, t, 0.35, 'sawtooth', 150, 100, 0.08); break;
+      case 'mob_static': this.noise(out, t, 0.6, 'bandpass', 1400, 600, 0.5, 0.12, 0.05); this.tone(out, t, 0.6, 'sine', 62, 55, 0.08); break;
+      case 'warp': this.tone(out, t, 0.28, 'sine', 260, 1100, 0.14); this.noise(out, t, 0.25, 'highpass', 1500, 5000, 0.8, 0.12); break;
+      case 'stare': this.tone(out, t, 1.4, 'sawtooth', 58, 42, 0.14, [7, 4]); this.noise(out, t, 1.4, 'bandpass', 900, 300, 0.6, 0.18, 0.1); break;
       default: break;
     }
   },
@@ -4965,20 +5195,22 @@ const Sky = {
     this.skyColor = new THREE.Color();
   },
   update(cam, time, dim) {
-    const nether = dim === 'nether';
-    this.sun.visible = this.moon.visible = this.stars.visible = !nether;
-    this.clouds.visible = !nether && Game.settings.clouds;
+    const nether = dim === 'nether', end = dim === 'end', over = dim === 'overworld';
+    this.sun.visible = this.moon.visible = over;
+    this.stars.visible = !nether;
+    this.clouds.visible = over && Game.settings.clouds;
     const a = (time / 24000) * Math.PI * 2;
     const dir = new THREE.Vector3(Math.cos(a), Math.sin(a), 0.25).normalize();
     this.sun.position.copy(cam.position).addScaledVector(dir, 300); this.sun.lookAt(cam.position);
     this.moon.position.copy(cam.position).addScaledVector(dir, -300); this.moon.lookAt(cam.position);
     this.stars.position.copy(cam.position);
     const day = Game.dayFactor();
-    this.stars.material.opacity = Math.max(0, 1 - day * 1.6);
+    this.stars.material.opacity = end ? 0.9 : Math.max(0, 1 - day * 1.6);
     this.clouds.position.set(cam.position.x, 118, cam.position.z);
     this.cloudTex.offset.set((cam.position.x / 1200) * 6 + Game.totalTicks * 0.00002, -(cam.position.z / 1200) * 6);
     const c = this.skyColor;
     if (nether) c.setRGB(0.2, 0.03, 0.03);
+    else if (end) c.setRGB(0.06, 0.04, 0.1);
     else {
       const dayC = new THREE.Color(0.47, 0.65, 1.0), night = new THREE.Color(0.02, 0.03, 0.08), dusk = new THREE.Color(0.95, 0.5, 0.3);
       c.copy(night).lerp(dayC, day);
@@ -5015,6 +5247,7 @@ const Dimension = {
     return { lx, lz, by, wd, h, ax, axis };
   },
   tryIgnite(w, x, y, z) {
+    if (w.dim === 'end') return false;
     for (const axis of [0, 1]) {
       const f = this.findFrame(w, x, y, z, axis);
       if (!f) continue;
@@ -5028,14 +5261,62 @@ const Dimension = {
   checkBreak(w, x, y, z) {
     for (const d of DIRS) { const nx = x + d.n[0], ny = y + d.n[1], nz = z + d.n[2]; if (w.getBlock(nx, ny, nz) === ID.PORTAL) this.floodRemove(w, nx, ny, nz); }
   },
-  floodRemove(w, x, y, z) {
+  floodRemove(w, x, y, z, id) {
+    id = id || ID.PORTAL;
     const q = [[x, y, z]]; let n = 0;
     while (q.length && n < 600) {
       const [a, b, c] = q.pop();
-      if (w.getBlock(a, b, c) !== ID.PORTAL) continue;
+      if (w.getBlock(a, b, c) !== id) continue;
       w.setBlock(a, b, c, 0, 0, { noFluid: true }); n++;
       for (const d of DIRS) q.push([a + d.n[0], b + d.n[1], c + d.n[2]]);
     }
+  },
+  // a ring of 12 frames with eyes around a 3x3 hole opens the portal to the End
+  tryEndPortal(w, x, y, z) {
+    for (let ax = x - 3; ax <= x + 1; ax++) for (let az = z - 3; az <= z + 1; az++) {
+      const ring = [];
+      for (let i = 0; i < 3; i++) ring.push([ax + i, az - 1], [ax + i, az + 3], [ax - 1, az + i], [ax + 3, az + i]);
+      if (!ring.some(r => r[0] === x && r[1] === z)) continue;
+      if (!ring.every(r => w.getBlock(r[0], y, r[1]) === ID.END_FRAME_EYE)) continue;
+      let clear = true;
+      for (let i = 0; i < 3 && clear; i++) for (let j = 0; j < 3 && clear; j++) { const b = w.getBlock(ax + i, y, az + j); if (b && !REPLACEABLE[b]) clear = false; }
+      if (!clear) continue;
+      for (let i = 0; i < 3; i++) for (let j = 0; j < 3; j++) w.setBlock(ax + i, y, az + j, ID.END_PORTAL, 0, { noFluid: true });
+      Sound.play('portal', { x, y, z });
+      Particles.puff(ax + 1.5, y + 1, az + 1.5, 40, 0.4, 0.9, 0.8, 3);
+      UI.toast('Портал в Край открыт', 2.5);
+      return true;
+    }
+    return false;
+  },
+  travelEnd() {
+    const P = Player;
+    Sound.play('portal');
+    if (Game.world.dim !== 'end') {
+      this.switchTo('end');
+      const w = Game.world, ax = 64, az = 0;
+      w.ensureArea(ax, az, 2);
+      let y = w.heightAt(ax, az);
+      if (y < 10) y = 56;
+      for (let dx = -2; dx <= 2; dx++) for (let dz = -2; dz <= 2; dz++) {
+        w.setBlock(ax + dx, y, az + dz, ID.OBSIDIAN, 0, { noFluid: true });
+        for (let dy = 1; dy <= 3; dy++) w.setBlock(ax + dx, y + dy, az + dz, 0, 0, { noFluid: true });
+      }
+      P.pos.set(ax + 0.5, y + 1, az + 0.5); P.yaw = Math.PI / 2; P.pitch = -0.1;
+      UI.toast('Вы вошли в Край', 2.5);
+    } else {
+      this.switchTo('overworld');
+      const w = Game.world;
+      let sp = P.spawn;
+      if (P.bedSpawn) { w.ensureArea(P.bedSpawn[0], P.bedSpawn[2], 1); if (w.getBlock(Math.floor(P.bedSpawn[0]), Math.floor(P.bedSpawn[1]), Math.floor(P.bedSpawn[2])) === ID.BED) sp = [P.bedSpawn[0], P.bedSpawn[1] + 0.6, P.bedSpawn[2]]; }
+      w.ensureArea(sp[0], sp[2], 2);
+      let y = Math.floor(sp[1]);
+      while (y < 126 && (SOLID[w.getBlock(Math.floor(sp[0]), y, Math.floor(sp[2]))] || SOLID[w.getBlock(Math.floor(sp[0]), y + 1, Math.floor(sp[2]))])) y++;
+      P.pos.set(sp[0], y, sp[2]);
+      UI.toast('Вы вернулись в обычный мир', 2.5);
+    }
+    P.vel.set(0, 0, 0); P.fallDist = 0; P.portalCd = true; P.portalT = 0;
+    UI.dirtyStats = true;
   },
   switchTo(dim) {
     const old = Game.world;
@@ -5257,14 +5538,14 @@ const Game = {
 
   /* ------------------------ time & lighting ------------------------ */
   dayFactor() { const a = (this.time / 24000) * Math.PI * 2; return U.smooth(U.clamp((Math.sin(a) + 0.2) / 0.5, 0, 1)); },
-  sunLevel() { return this.world && this.world.dim === 'nether' ? 0.62 : 0.22 + 0.78 * this.dayFactor(); },
+  sunLevel() { const d = this.world && this.world.dim; return d === 'nether' ? 0.62 : d === 'end' ? 0.7 : 0.22 + 0.78 * this.dayFactor(); },
   isNight() { const t = U.mod(this.time, 24000); return t > 12800 && t < 23200; },
   diffMul() { return [0, 0.5, 1, 1.5][this.difficulty]; },
   lightAt(x, y, z) {
     const w = this.world; if (!w) return 15;
     const bx = Math.floor(x), by = Math.floor(y), bz = Math.floor(z);
     let sky;
-    if (w.dim === 'nether') sky = 7;
+    if (w.dim !== 'overworld') sky = 7;
     else { const top = w.heightAt(bx, bz); sky = (by > top ? 15 : Math.max(0, 12 - (top - by) * 2)) * this.sunLevel(); }
     let bl = 0;
     const cx = bx >> 4, cz = bz >> 4;
@@ -5277,8 +5558,9 @@ const Game = {
   applyFog() {
     const R = this.settings.renderDist;
     const far = R * 16 - 4;
-    this.fogNear = this.world && this.world.dim === 'nether' ? far * 0.25 : far * 0.62;
-    this.fogFar = this.world && this.world.dim === 'nether' ? far * 0.8 : far;
+    const dim = this.world && this.world.dim;
+    this.fogNear = dim === 'nether' ? far * 0.25 : dim === 'end' ? far * 0.45 : far * 0.62;
+    this.fogFar = dim === 'nether' ? far * 0.8 : far;
   },
 
   /* ----------------------------- menus ------------------------------ */
@@ -5538,6 +5820,7 @@ const Game = {
     const above = w.getBlock(x, y + 1, z);
     if (this.needsSupport(above) || (above === ID.DOOR && !(w.getMeta(x, y + 1, z) & 1))) this.breakBlock(x, y + 1, z, false);
     if (id === ID.OBSIDIAN || id === ID.PORTAL) Dimension.checkBreak(w, x, y, z);
+    if (id === ID.END_FRAME_EYE) for (let dx = -3; dx <= 3; dx++) for (let dz = -3; dz <= 3; dz++) if (w.getBlock(x + dx, y, z + dz) === ID.END_PORTAL) Dimension.floodRemove(w, x + dx, y, z + dz, ID.END_PORTAL);
   },
   dropBlockItems(id, x, y, z) {
     const b = BLOCKS[id]; if (!b || b.drop === null) return;
@@ -5645,9 +5928,9 @@ const Game = {
         break;
       }
       case 'summon': {
-        const map = { zombie: 'zombie', 'зомби': 'zombie', skeleton: 'skeleton', 'скелет': 'skeleton', spider: 'spider', 'паук': 'spider', hisser: 'hisser', creeper: 'hisser', 'шипун': 'hisser', cow: 'cow', 'корова': 'cow', pig: 'pig', 'свинья': 'pig', sheep: 'sheep', 'овца': 'sheep', chicken: 'chicken', 'курица': 'chicken', villager: 'villager', 'житель': 'villager', golem: 'golem', 'голем': 'golem', ghast: 'ghast', 'огнеглаз': 'ghast', pigman: 'pigman', 'свинозомби': 'pigman' };
+        const map = { zombie: 'zombie', 'зомби': 'zombie', skeleton: 'skeleton', 'скелет': 'skeleton', spider: 'spider', 'паук': 'spider', hisser: 'hisser', creeper: 'hisser', 'шипун': 'hisser', cow: 'cow', 'корова': 'cow', pig: 'pig', 'свинья': 'pig', sheep: 'sheep', 'овца': 'sheep', chicken: 'chicken', 'курица': 'chicken', villager: 'villager', 'житель': 'villager', golem: 'golem', 'голем': 'golem', ghast: 'ghast', 'огнеглаз': 'ghast', pigman: 'pigman', 'свинозомби': 'pigman', slender: 'slender', slenderman: 'slender', enderman: 'slender', 'слендермен': 'slender' };
         const t = map[(a[0] || '').toLowerCase()];
-        if (!t) { this.chat('Существа: zombie, skeleton, spider, hisser, cow, pig, sheep, chicken, villager, golem, ghast, pigman', '#ff8080'); break; }
+        if (!t) { this.chat('Существа: zombie, skeleton, spider, hisser, slender, cow, pig, sheep, chicken, villager, golem, ghast, pigman', '#ff8080'); break; }
         const d = P.lookDir();
         const m = Mobs.spawn(t, this.world, P.pos.x + d.x * 3, P.pos.y + (t === 'ghast' ? 3 : 0.2), P.pos.z + d.z * 3, t === 'villager' ? { homeArea: [P.pos.x, P.pos.z, 12] } : null);
         this.chat('Призвано: ' + m.t.name);
@@ -5723,10 +6006,10 @@ const Game = {
   updateLighting() {
     const w = this.world;
     const U2 = Mesher.uniforms;
-    const nether = w && w.dim === 'nether';
+    const nether = w && w.dim === 'nether', end = w && w.dim === 'end';
     U2.uSun.value = this.sunLevel();
-    if (nether) U2.uSkyTint.value.setRGB(1.0, 0.72, 0.62); else U2.uSkyTint.value.setRGB(1, 1, 1);
-    U2.uMin.value = nether ? 0.08 : 0.035;
+    if (nether) U2.uSkyTint.value.setRGB(1.0, 0.72, 0.62); else if (end) U2.uSkyTint.value.setRGB(0.9, 0.85, 1.0); else U2.uSkyTint.value.setRGB(1, 1, 1);
+    U2.uMin.value = nether || end ? 0.08 : 0.035;
     const P = Player;
     let fogC = Sky.update(this.camera, this.time, w ? w.dim : 'overworld').clone();
     let near = this.fogNear, far = this.fogFar;
@@ -5735,9 +6018,9 @@ const Game = {
     U2.uFogColor.value.copy(fogC); U2.uFogNear.value = near; U2.uFogFar.value = far;
     this.scene.fog.color.copy(fogC); this.scene.fog.near = near; this.scene.fog.far = far;
     this.renderer.setClearColor(fogC);
-    const day = nether ? 0.5 : this.sunLevel();
+    const day = nether || end ? 0.5 : this.sunLevel();
     this.ambient.intensity = 0.25 + day * 0.5; this.sunLight.intensity = day * 0.45;
-    if (nether) this.ambient.color.setRGB(1, 0.8, 0.7); else this.ambient.color.setRGB(1, 1, 1);
+    if (nether) this.ambient.color.setRGB(1, 0.8, 0.7); else if (end) this.ambient.color.setRGB(0.85, 0.8, 1); else this.ambient.color.setRGB(1, 1, 1);
   },
   loop(now) {
     requestAnimationFrame((t) => this.loop(t));
@@ -5822,7 +6105,7 @@ const Game = {
 
 const boot = () => {
   Game.init();
-  window.BlockCraft = { Game, Player, Inventory, Mobs, UI, World, Dimension, Save, Registry, ID };
+  window.BlockCraft = { Game, Player, Inventory, Crafting, Mobs, UI, World, Dimension, Save, Registry, ID };
 };
 if (document.readyState === 'loading') window.addEventListener('DOMContentLoaded', boot); else boot();
 })();
