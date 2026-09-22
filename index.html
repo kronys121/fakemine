@@ -277,7 +277,7 @@ body.menu canvas#gl{filter:blur(3px) brightness(0.85)}
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script>
 (function () {
-if (typeof THREE === 'undefined') { window.addEventListener('DOMContentLoaded', function () { document.body.innerHTML = '<div style="padding:24px;font:14px monospace;color:#fff;background:#200">Не удалось загрузить Three.js с cdnjs.cloudflare.com. Проверьте подключение к интернету и перезагрузите страницу.</div>'; }); return; }
+if (typeof THREE === 'undefined') { var fail = function () { document.body.innerHTML = '<div style="padding:24px;font:14px monospace;color:#fff;background:#200">Не удалось загрузить Three.js с cdnjs.cloudflare.com. Проверьте подключение к интернету и перезагрузите страницу.</div>'; }; if (document.readyState === 'loading') window.addEventListener('DOMContentLoaded', fail); else fail(); return; }
 'use strict';
 /* =====================================================================
    BlockCraft: voxel sandbox in a single file.
@@ -5820,14 +5820,11 @@ const Game = {
   },
 };
 
-window.addEventListener('DOMContentLoaded', () => {
-  if (typeof THREE === 'undefined') {
-    document.body.innerHTML = '<div style="padding:24px;font:14px monospace;color:#fff;background:#200">Не удалось загрузить Three.js с cdnjs.cloudflare.com. Проверьте подключение к интернету и перезагрузите страницу.</div>';
-    return;
-  }
+const boot = () => {
   Game.init();
   window.BlockCraft = { Game, Player, Inventory, Mobs, UI, World, Dimension, Save, Registry, ID };
-});
+};
+if (document.readyState === 'loading') window.addEventListener('DOMContentLoaded', boot); else boot();
 })();
 </script>
 </body>
